@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for Clerk integration
+model User {
+  id            String     @id // This will be the Clerk user ID
+  email         String     @unique
+  firstName     String?
+  lastName      String?
+  imageUrl      String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  connections   DatabaseConnection[]
+  webhooks      WebhookEndpoint[]
+  indexingConfigs IndexingConfiguration[]
+}
+
+// Database connection model to store user's database credentials
+model DatabaseConnection {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  host      String
+  port      Int
+  username  String
+  password  String   // Should be encrypted before storing
+  database  String
+  schema    String?  @default("public")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, name])
+}
+
+// Indexing configuration model to store what data the user wants to index
+model IndexingConfiguration {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectionId      String
+  name              String
+  dataType          DataType
+  targetTable       String
+  filters           Json?    // For filtering specific data (e.g., specific NFT collections)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  syncStatuses      SyncStatus[]
+  webhookEndpoints  WebhookConfigMapping[]
+}
+
+// Webhook endpoint model to manage webhook configurations
+model WebhookEndpoint {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url             String   @unique
+  secret          String   // For webhook verification
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  configurations  WebhookConfigMapping[]
+}
+
+// Many-to-many relationship between webhooks and indexing configurations
+model WebhookConfigMapping {
+  webhookId     String
+  webhook       WebhookEndpoint @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  configId      String
+  config        IndexingConfiguration @relation(fields: [configId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@id([webhookId, configId])
+}
+
+// Sync status model to track synchronization status and errors
+model SyncStatus {
+  id              String   @id @default(cuid())
+  configId        String
+  config          IndexingConfiguration @relation(fields: [configId], references: [id], onDelete: Cascade)
+  status          SyncStatusType
+  lastSyncedAt    DateTime?
+  recordsProcessed Int      @default(0)
+  error           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Enum for data types that can be indexed
+enum DataType {
+  NFT_BIDS
+  NFT_PRICES
+  TOKEN_AVAILABILITY
+  TOKEN_PRICES
+}
+
+// Enum for sync status
+enum SyncStatusType {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
