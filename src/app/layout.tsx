@@ -1,23 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { CustomClerkProvider } from "@/components/clerk-provider";
-import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Solana Blockchain Indexer",
-  description: "Index Solana blockchain data into your PostgreSQL database with Helius",
+  title: "Blockchain Indexer",
+  description: "Index blockchain data into your PostgreSQL database",
 };
 
 export default function RootLayout({
@@ -26,18 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <CustomClerkProvider>
+    <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} dark:bg-gray-950 antialiased`}
-          suppressHydrationWarning
-        >
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-            {children}
-            <Toaster />
-          </ThemeProvider>
+        <body className={inter.className} suppressHydrationWarning>
+          {children}
+          <Toaster position="top-right" richColors />
         </body>
       </html>
-    </CustomClerkProvider>
+    </ClerkProvider>
   );
 }

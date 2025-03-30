@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { validateWebhookSignature } from "@/lib/helius";
 import { Client } from "pg";
+import { validateAndCreateSchema } from "@/lib/schema";
+import { processWithRetry, ProcessingError, notifyError } from "@/lib/error-handling";
 
 // Enum for data types that can be indexed (same as in Prisma schema)
 enum DataType {
@@ -241,7 +243,7 @@ export async function POST(
     // Extract webhookId from the URL path
     const url = new URL(request.url);
     const pathParts = url.pathname.split('/');
-    const webhookId = pathParts[pathParts.length - 1]; // Get the last part of the URL
+    const webhookId = pathParts[pathParts.length - 1];
 
     // Get the request body
     const body = await request.json();
@@ -258,15 +260,11 @@ export async function POST(
 
     // Get the webhook configuration and secret from the database
     const webhookConfig = await prisma.webhookEndpoint.findUnique({
-      where: { webhookId },
+      where: { id: webhookId },
       include: {
         configurations: {
           include: {
-            indexingConfiguration: {
-              include: {
-                databaseConnection: true
-              }
-            }
+            config: true
           }
         }
       }
@@ -303,75 +301,93 @@ export async function POST(
 
     // Process each configuration linked to this webhook
     for (const configMapping of webhookConfig.configurations) {
-      const config = configMapping.indexingConfiguration;
+      const config = configMapping.config;
       
-      // Update sync status to processing
-      await prisma.syncStatus.create({
-        data: {
-          indexingConfigurationId: config.id,
-          status: "PROCESSING",
-          startedAt: new Date(),
-        }
-      });
-
       try {
         // Connect to the user's database
-        const dbConfig = config.databaseConnection;
+        const dbConnection = await prisma.databaseConnection.findUnique({
+          where: { id: config.connectionId }
+        });
+        
+        if (!dbConnection) {
+          throw new Error(`Database connection not found for configuration ${config.id}`);
+        }
         
         dbClient = new Client({
-          host: dbConfig.host,
-          port: dbConfig.port,
-          user: dbConfig.username,
-          password: dbConfig.password, // Assuming password is stored decrypted in the database
-          database: dbConfig.databaseName,
+          host: dbConnection.host,
+          port: dbConnection.port,
+          user: dbConnection.username,
+          password: dbConnection.password,
+          database: dbConnection.database,
+          ssl: dbConnection.useSSL ? { rejectUnauthorized: false } : false,
         });
 
         await dbClient.connect();
 
-        // Process data based on configuration type
-        let recordsProcessed = 0;
-        
-        switch (config.dataType as DataType) {
-          case DataType.NFT_PRICES:
-            recordsProcessed = await processNFTPrices(body, config, dbClient);
-            break;
-          case DataType.NFT_BIDS:
-            recordsProcessed = await processNFTBids(body, config, dbClient);
-            break;
-          case DataType.TOKEN_AVAILABILITY:
-            recordsProcessed = await processTokenAvailability(body, config, dbClient);
-            break;
-          case DataType.TOKEN_PRICES:
-            recordsProcessed = await processTokenPrices(body, config, dbClient);
-            break;
-        }
+        // Validate and create schema if needed
+        await validateAndCreateSchema(
+          { targetTable: config.targetTable, dataType: config.dataType },
+          dbClient
+        );
+
+        // Process data with retry mechanism
+        const recordsProcessed = await processWithRetry(
+          async () => {
+            let processed = 0;
+            
+            switch (config.dataType) {
+              case "NFT_PRICES":
+                processed = await processNFTPrices(body, config, dbClient!);
+                break;
+              case "NFT_BIDS":
+                processed = await processNFTBids(body, config, dbClient!);
+                break;
+              case "TOKEN_AVAILABILITY":
+                processed = await processTokenAvailability(body, config, dbClient!);
+                break;
+              case "TOKEN_PRICES":
+                processed = await processTokenPrices(body, config, dbClient!);
+                break;
+            }
+
+            return processed;
+          },
+          config.id,
+          config.dataType
+        );
 
         // Update sync status to success
         await prisma.syncStatus.create({
           data: {
-            indexingConfigurationId: config.id,
-            status: "SUCCESS",
-            completedAt: new Date(),
+            configId: config.id,
+            status: "COMPLETED",
             recordsProcessed,
-          }
+            lastSyncedAt: new Date(),
+            metadata: {
+              webhookId,
+              timestamp: new Date().toISOString(),
+            },
+          },
         });
+
       } catch (error) {
         console.error(`Error processing webhook data for config ${config.id}:`, error);
         
-        // Update sync status to error
-        await prisma.syncStatus.create({
-          data: {
-            indexingConfigurationId: config.id,
-            status: "ERROR",
-            completedAt: new Date(),
-            errorMessage: error instanceof Error ? error.message : String(error),
-          }
-        });
+        if (error instanceof ProcessingError) {
+          await notifyError(config.id, config.dataType, error);
+        } else {
+          // Create a ProcessingError for unknown errors
+          const processingError = new ProcessingError(
+            error instanceof Error ? error.message : String(error),
+            config.id,
+            config.dataType,
+            error instanceof Error ? error : undefined
+          );
+          await notifyError(config.id, config.dataType, processingError);
+        }
       } finally {
         if (dbClient) {
-          // Use unknown as an intermediate type to safely cast
-          const client = dbClient as unknown as { end: () => Promise<void> };
-          await client.end();
+          await dbClient.end();
           dbClient = null;
         }
       }
@@ -386,9 +402,7 @@ export async function POST(
     );
   } finally {
     if (dbClient) {
-      // Use unknown as an intermediate type to safely cast
-      const client = dbClient as unknown as { end: () => Promise<void> };
-      await client.end();
+      await dbClient.end();
     }
   }
 } 

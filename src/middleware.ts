@@ -6,8 +6,7 @@ export default authMiddleware({
     "/",
     "/api/webhooks(.*)",
     "/api/webhook(.*)",
-    "/auth/(.*)",  // Auth pages (sign-in, sign-up, etc.)
-    "/sign-out"    // Sign-out page
+    "/auth/(.*)",  // Auth pages (sign-in, sign-up, sign-out, etc.)
   ]
 });
 
@@ -22,6 +21,7 @@ export const config = {
      * - public folder
      */
     '/((?!_next/static|_next/image|favicon.ico|public).*)',
+    '/dashboard(.*)',  // Explicitly include dashboard routes
     '/(api|trpc)(.*)',
   ],
 }; 

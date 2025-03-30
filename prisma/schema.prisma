@@ -39,6 +39,7 @@ model DatabaseConnection {
   password  String   // Should be encrypted before storing
   database  String
   schema    String?  @default("public")
+  useSSL    Boolean  @default(true) // Whether to use SSL for the connection
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -71,9 +72,14 @@ model WebhookEndpoint {
   url             String   @unique
   secret          String   // For webhook verification
   isActive        Boolean  @default(true)
+  lastError       String?
+  lastErrorAt     DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   configurations  WebhookConfigMapping[]
+
+  @@index([userId])
+  @@index([isActive])
 }
 
 // Many-to-many relationship between webhooks and indexing configurations
@@ -91,13 +97,18 @@ model WebhookConfigMapping {
 model SyncStatus {
   id              String   @id @default(cuid())
   configId        String
-  config          IndexingConfiguration @relation(fields: [configId], references: [id], onDelete: Cascade)
-  status          SyncStatusType
-  lastSyncedAt    DateTime?
-  recordsProcessed Int      @default(0)
+  status          String   // RUNNING, COMPLETED, FAILED
+  recordsProcessed Int     @default(0)
   error           String?
+  metadata        Json?    // Store additional metadata like attempt count, timestamps, etc.
+  lastSyncedAt    DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  config          IndexingConfiguration @relation(fields: [configId], references: [id])
+
+  @@index([configId])
+  @@index([status])
 }
 
 // Enum for data types that can be indexed

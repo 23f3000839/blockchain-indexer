@@ -68,7 +68,7 @@ export function FloatingNavbar({
                     Dashboard
                   </Link>
                   <Link 
-                    href="/sign-out" 
+                    href="/auth/sign-out" 
                     className="text-rose-400 hover:text-rose-300 hidden md:inline-block"
                     title="Sign Out"
                   >

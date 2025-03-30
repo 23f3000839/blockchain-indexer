@@ -1,158 +1,231 @@
-# Solana Blockchain Indexing Platform
+# Blockchain Indexer
 
-A full-stack application that enables developers to easily integrate and index Solana blockchain data into their PostgreSQL database using Helius webhooks.
-
-## Overview
-
-This platform eliminates the complexity of running your own RPC, Geyser, Validator, or webhook infrastructure by leveraging Helius webhooks for seamless data indexing. It provides a user-friendly interface to configure, monitor, and manage the indexing process.
+A powerful platform for indexing blockchain data into PostgreSQL databases using Helius webhooks.
 
 ## Features
 
-- **User Authentication** via Clerk
-- **PostgreSQL Database Integration**
-  - Securely store and manage database connection credentials
-  - Test connections before saving
-- **Customizable Data Indexing**
-  - NFT bid tracking
-  - NFT price tracking
-  - Token availability monitoring
-  - Token price tracking across platforms
-- **Helius Webhook Integration**
-  - Automated webhook setup and management
-  - Webhook signature verification
-  - Real-time data processing
-- **Schema Generation**
-  - Generate appropriate database schemas for different data types
-- **Dashboard & Monitoring**
-  - Real-time status of indexing jobs
-  - Error reporting and troubleshooting
-  - Data synchronization statistics
+- 🔐 Secure user authentication with Clerk
+- 📊 PostgreSQL database integration with SSL support
+- 🔄 Real-time blockchain data indexing
+- 🎯 Customizable data types:
+  - NFT prices
+  - NFT bids
+  - Token availability
+  - Token prices
+- 🔍 Schema validation and management
+- 🔄 Automatic retry mechanism
+- 📝 Error tracking and notifications
+- 🎨 Modern dark mode UI
 
-## Tech Stack
+## Prerequisites
 
-- **Frontend**: Next.js 14 (App Router), TypeScript, TailwindCSS, Shadcn/UI
-- **Authentication**: Clerk
-- **Database**: PostgreSQL, Prisma ORM
-- **State Management**: TanStack Query
-- **Data Tables**: TanStack Table
-- **Form Handling**: React Hook Form, Zod
-- **Icons**: Lucide React
-- **Blockchain**: Helius API, Solana web3.js
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v18 or higher) or Bun
+- Node.js 18+ or Bun
 - PostgreSQL database
+- Helius API key
+- Clerk account for authentication
 
-### Installation
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Database
+DATABASE_URL="postgresql://user:password@host:port/database"
+
+# Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="your_clerk_publishable_key"
+CLERK_SECRET_KEY="your_clerk_secret_key"
+
+# Helius
+HELIUS_API_KEY="your_helius_api_key"
+WEBHOOK_SECRET="your_webhook_secret"
+
+# Application
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+## Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/blockchain-indexer.git
-   cd blockchain-indexer
-   ```
+```bash
+git clone https://github.com/yourusername/blockchain-indexer.git
+cd blockchain-indexer
+```
 
 2. Install dependencies:
-   ```bash
-   bun install
-   ```
-
-3. Set up your environment variables by creating a `.env` file:
-   ```
-   # Database
-   DATABASE_URL="postgresql://username:password@localhost:5432/blockchain_indexer"
-
-   # Clerk Authentication
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="your_clerk_publishable_key"
-   CLERK_SECRET_KEY="your_clerk_secret_key"
-   NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
-   NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
-   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard"
-   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/onboarding"
-
-   # Helius API
-   HELIUS_API_KEY="your_helius_api_key"
-
-   # Encryption (32 bytes for AES-256)
-   ENCRYPTION_KEY="32_character_secret_for_encryption"
-
-   # Webhook Secret
-   WEBHOOK_SECRET="secret_for_webhook_signature_verification"
-
-   # Solana RPC URL (devnet for testing)
-   SOLANA_RPC_URL="https://api.devnet.solana.com"
-   ```
-
-4. Initialize the database:
-   ```bash
-   bun run prisma:migrate
-   ```
-
-5. Start the development server:
-   ```bash
-   bun run dev
-   ```
-
-## Usage
-
-1. **Create an Account**: Sign up using email or your preferred OAuth method.
-
-2. **Connect Your Database**: Add your PostgreSQL database credentials to establish a connection.
-
-3. **Configure Data Indexing**: Select what Solana blockchain data you want to index and specify the target table.
-
-4. **Set Up Webhooks**: The platform will automatically set up Helius webhooks to capture the data you've chosen.
-
-5. **Monitor Your Data**: Use the dashboard to monitor the status of your indexing jobs and view statistics.
-
-## Database Schema Overview
-
-### User Management
-- `User`: Stores user information from Clerk
-- `DatabaseConnection`: Stores encrypted database credentials for users
-
-### Indexing Configuration
-- `IndexingConfiguration`: Defines what data to index and how
-- `WebhookEndpoint`: Manages webhook endpoints for receiving data
-- `WebhookConfigMapping`: Connects webhooks to indexing configurations
-- `SyncStatus`: Tracks synchronization status and errors
-
-### Data Types
-- `NFT_BIDS`: Track NFT bid activity
-- `NFT_PRICES`: Monitor NFT price movements
-- `TOKEN_AVAILABILITY`: Track token availability
-- `TOKEN_PRICES`: Monitor token prices across platforms
-
-## API Reference
-
-### Webhook Endpoint
-
-```
-POST /api/webhooks/helius/:webhookId
+```bash
+npm install
+# or
+bun install
 ```
 
-This endpoint receives webhook data from Helius and processes it according to the configured indexing rules.
+3. Set up the database:
+```bash
+npx prisma migrate dev
+```
 
-### Other API Endpoints
+4. Start the development server:
+```bash
+npm run dev
+# or
+bun dev
+```
 
-The platform provides several API endpoints for managing database connections, indexing configurations, and webhooks. See the API documentation for details.
+## Project Structure
 
-## Setting Up Webhooks Manually
+```
+blockchain-indexer/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── connections/    # Database connection management
+│   │   │   │   └── index.ts    # API routes for connections
+│   │   │   ├── indexing/       # Indexing configuration management
+│   │   │   └── webhooks/       # Webhook handling
+│   │   │       └── index.ts    # API routes for webhooks
+│   │   ├── dashboard/         # Dashboard pages
+│   │   └── layout.tsx         # Root layout
+│   ├── components/            # UI components
+│   │   ├── api-components/    # Components for API requests
+│   │   ├── dashboard-components/ # Components for dashboard pages
+│   │   └── layout.tsx         # Root layout
+│   ├── lib/
+│   │   ├── db.ts             # Database utilities
+│   │   ├── helius.ts         # Helius API utilities
+│   │   ├── schema.ts         # Schema management
+│   │   └── error-handling.ts # Error handling utilities
+│   └── types/                # TypeScript types
+├── prisma/
+│   └── schema.prisma         # Database schema
+└── public/                   # Static assets
+```
 
-While the platform automates webhook setup, you can also create webhooks manually:
+## Database Schema
 
-1. Obtain your Helius API key
-2. Create a webhook endpoint on Helius pointing to `https://yourdomain.com/api/webhooks/helius/:webhookId`
-3. Configure your indexing settings in the platform
+### Tables
+
+1. **User**
+   - User information and authentication
+   - One-to-many relationship with database connections
+
+2. **DatabaseConnection**
+   - PostgreSQL connection details
+   - Encrypted credentials
+   - SSL support
+
+3. **IndexingConfiguration**
+   - Data type selection
+   - Target table specification
+   - Active/inactive status
+
+4. **WebhookEndpoint**
+   - Helius webhook configuration
+   - Secret for signature verification
+   - Error tracking
+
+5. **SyncStatus**
+   - Processing status
+   - Record counts
+   - Error logging
+   - Metadata storage
+
+## API Endpoints
+
+### Database Connections
+
+- `POST /api/connections`
+  - Create a new database connection
+  - Validates connection before saving
+  - Encrypts sensitive data
+
+- `GET /api/connections`
+  - List all connections for the current user
+  - Decrypts connection details
+
+- `DELETE /api/connections/:id`
+  - Delete a database connection
+  - Cascades to related configurations
+
+### Indexing Configurations
+
+- `POST /api/indexing`
+  - Create a new indexing configuration
+  - Validates target table schema
+  - Sets up webhook endpoint
+
+- `GET /api/indexing`
+  - List all configurations for the current user
+  - Includes sync status
+
+- `DELETE /api/indexing/:id`
+  - Delete an indexing configuration
+  - Removes associated webhook endpoint
+
+### Webhooks
+
+- `POST /api/webhooks/helius/:id`
+  - Handles incoming Helius webhooks
+  - Validates webhook signature
+  - Processes data based on configuration
+  - Implements retry mechanism
+  - Tracks processing status
+
+## Error Handling
+
+The application implements a robust error handling system:
+
+1. **Retry Mechanism**
+   - Exponential backoff
+   - Configurable retry attempts
+   - Maximum delay limits
+
+2. **Error Tracking**
+   - Detailed error logging
+   - Processing status updates
+   - User notifications
+
+3. **Schema Validation**
+   - Automatic table creation
+   - Column validation
+   - Index management
+
+## Development
+
+### Running Tests
+
+```bash
+npm run test
+# or
+bun test
+```
+
+### Database Migrations
+
+```bash
+# Create a new migration
+npx prisma migrate dev --name migration_name
+
+# Apply migrations
+npx prisma migrate deploy
+
+# Reset database
+npx prisma migrate reset
+```
+
+### Type Generation
+
+```bash
+npx prisma generate
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgements
-
-- [Helius](https://helius.xyz) - Providing the webhook infrastructure
-- [Solana](https://solana.com) - The blockchain platform
-- [Shadcn/UI](https://ui.shadcn.com/) - For the beautiful UI components
+MIT License - see LICENSE file for details

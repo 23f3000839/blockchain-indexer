@@ -1,16 +1,14 @@
 "use client";
 
+import React, { ReactNode } from "react";
 import { UserButton } from "@clerk/nextjs";
-import { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, 
   Database, 
-  Settings, 
-  Activity, 
-  WebhookIcon,
+  Webhook, 
   GalleryHorizontalEnd,
-  BarChart,
   LogOut
 } from "lucide-react";
 
@@ -19,85 +17,76 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const pathname = usePathname();
+  
+  // Navigation items for the sidebar
+  const navItems = [
+    {
+      name: "Dashboard",
+      href: "/dashboard",
+      icon: LayoutDashboard
+    },
+    {
+      name: "Database Connections",
+      href: "/dashboard/connections",
+      icon: Database
+    },
+    {
+      name: "Indexing Configurations",
+      href: "/dashboard/indexing",
+      icon: GalleryHorizontalEnd
+    },
+    {
+      name: "Webhooks",
+      href: "/dashboard/webhooks",
+      icon: Webhook
+    }
+  ];
+
+  // Helper function to check if a link is active
+  const isActive = (path: string) => {
+    if (path === "/dashboard" && pathname === "/dashboard") {
+      return true;
+    }
+    if (path !== "/dashboard" && pathname.startsWith(path)) {
+      return true;
+    }
+    return false;
+  };
+
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-gray-950">
       {/* Sidebar */}
-      <div className="w-64 bg-slate-900 text-white p-4 flex flex-col">
+      <div className="w-64 bg-gray-900 text-white p-4 flex flex-col border-r border-gray-800">
         <div className="p-4">
-          <h1 className="text-xl font-bold">Blockchain Indexer</h1>
+          <Link href="/dashboard">
+            <h1 className="text-xl font-bold text-indigo-400">Blockchain Indexer</h1>
+          </Link>
         </div>
         <nav className="flex-1 pt-6">
           <ul className="space-y-2">
-            <li>
-              <Link 
-                href="/dashboard" 
-                className="flex items-center px-4 py-3 text-sm rounded-md hover:bg-slate-800 transition"
-              >
-                <LayoutDashboard className="mr-3 h-4 w-4" />
-                Dashboard
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/dashboard/connections" 
-                className="flex items-center px-4 py-3 text-sm rounded-md hover:bg-slate-800 transition"
-              >
-                <Database className="mr-3 h-4 w-4" />
-                Database Connections
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/dashboard/indexing" 
-                className="flex items-center px-4 py-3 text-sm rounded-md hover:bg-slate-800 transition"
-              >
-                <GalleryHorizontalEnd className="mr-3 h-4 w-4" />
-                Indexing Configurations
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/dashboard/webhooks" 
-                className="flex items-center px-4 py-3 text-sm rounded-md hover:bg-slate-800 transition"
-              >
-                <WebhookIcon className="mr-3 h-4 w-4" />
-                Webhooks
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/dashboard/monitoring" 
-                className="flex items-center px-4 py-3 text-sm rounded-md hover:bg-slate-800 transition"
-              >
-                <BarChart className="mr-3 h-4 w-4" />
-                Monitoring
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/dashboard/activity" 
-                className="flex items-center px-4 py-3 text-sm rounded-md hover:bg-slate-800 transition"
-              >
-                <Activity className="mr-3 h-4 w-4" />
-                Activity Logs
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/dashboard/settings" 
-                className="flex items-center px-4 py-3 text-sm rounded-md hover:bg-slate-800 transition"
-              >
-                <Settings className="mr-3 h-4 w-4" />
-                Settings
-              </Link>
-            </li>
+            {navItems.map((item) => (
+              <li key={item.href}>
+                <Link 
+                  href={item.href} 
+                  className={`flex items-center px-4 py-3 text-sm rounded-md transition ${
+                    isActive(item.href) 
+                      ? "bg-gray-800 text-white font-medium" 
+                      : "hover:bg-gray-800 text-gray-300"
+                  }`}
+                >
+                  <item.icon className="mr-3 h-4 w-4" />
+                  {item.name}
+                </Link>
+              </li>
+            ))}
           </ul>
         </nav>
-        <div className="border-t border-slate-700 pt-4 mt-6">
+        <div className="border-t border-gray-800 pt-4 mt-6">
           <div className="flex items-center px-4 py-3">
             <UserButton afterSignOutUrl="/" />
             <div className="ml-3 flex-1">
-              <span className="text-sm">Account</span>
+              <span className="text-sm text-gray-300">Account</span>
             </div>
             <Link
               href="/sign-out"
@@ -111,14 +100,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
-        
-          <div className="flex justify-between items-center">
-            <div>
-              {/* Top right content */}
-            </div>
-          </div>
-        
+      <div className="flex-1 overflow-y-auto bg-gray-950 text-gray-100">
         <main className="p-6">{children}</main>
       </div>
     </div>

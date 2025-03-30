@@ -34,31 +34,29 @@ export default function SignOutPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-950 text-white">
-      <div className="w-full max-w-md p-8 space-y-8 bg-gray-900 rounded-lg shadow-lg">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Sign Out</h1>
-          <p className="text-gray-400">Are you sure you want to sign out?</p>
-        </div>
+    <div className="w-full max-w-md p-8 space-y-8 bg-gray-900 rounded-lg shadow-lg">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-2">Sign Out</h1>
+        <p className="text-gray-400">Are you sure you want to sign out?</p>
+      </div>
 
-        <div className="flex flex-col gap-4">
-          <Button 
-            onClick={handleSignOut} 
-            className="w-full bg-red-600 hover:bg-red-700"
-            disabled={isSigningOut}
-          >
-            {isSigningOut ? "Signing Out..." : "Sign Out"}
-          </Button>
-          
-          <Button
-            variant="outline"
-            className="w-full border-gray-700 text-gray-300 hover:bg-gray-800"
-            onClick={() => router.back()}
-            disabled={isSigningOut}
-          >
-            Cancel
-          </Button>
-        </div>
+      <div className="flex flex-col gap-4">
+        <Button 
+          onClick={handleSignOut} 
+          className="w-full bg-red-600 hover:bg-red-700"
+          disabled={isSigningOut}
+        >
+          {isSigningOut ? "Signing Out..." : "Sign Out"}
+        </Button>
+        
+        <Button
+          variant="outline"
+          className="w-full border-gray-700 text-gray-300 hover:bg-gray-800"
+          onClick={() => router.back()}
+          disabled={isSigningOut}
+        >
+          Cancel
+        </Button>
       </div>
     </div>
   );

@@ -38,22 +38,31 @@ export const testDatabaseConnection = async (
   port: number,
   username: string,
   password: string,
-  database: string
+  database: string,
+  schema: string = "public",
+  useSSL: boolean = true
 ): Promise<{ success: boolean; message: string }> => {
   const { Client } = await import("pg");
   
-  const client = new Client({
+  // Prepare connection options
+  const connectionOptions = {
     host,
     port,
     user: username,
     password,
     database,
-    ssl: false, // Set to true for SSL connections
-    connectionTimeoutMillis: 5000, // 5 seconds
-  });
+    ssl: useSSL ? { rejectUnauthorized: false } : false, // Enable SSL with rejectUnauthorized set to false
+    connectionTimeoutMillis: 10000, // 10 seconds timeout
+  };
+
+  console.log("Testing connection to:", host, port, database, "with SSL:", useSSL);
+  
+  const client = new Client(connectionOptions);
 
   try {
     await client.connect();
+    // Test the connection by executing a simple query
+    await client.query(`SET search_path TO ${schema}`);
     await client.query("SELECT NOW()");
     return { success: true, message: "Connection successful" };
   } catch (error) {
@@ -63,6 +72,10 @@ export const testDatabaseConnection = async (
       message: error instanceof Error ? error.message : "Unknown error occurred" 
     };
   } finally {
-    await client.end();
+    try {
+      await client.end();
+    } catch (endError) {
+      console.error("Error closing client:", endError);
+    }
   }
 }; 
