@@ -387,7 +387,7 @@ export async function POST(
         }
       } finally {
         if (dbClient) {
-          await dbClient.end();
+          await (dbClient as Client).end();
           dbClient = null;
         }
       }
@@ -402,7 +402,7 @@ export async function POST(
     );
   } finally {
     if (dbClient) {
-      await dbClient.end();
+      await (dbClient as Client).end();
     }
   }
 } 

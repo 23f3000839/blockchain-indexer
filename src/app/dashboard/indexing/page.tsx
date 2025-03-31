@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { SyncStatusType } from "@prisma/client"; 
+import { SyncStatus } from "@prisma/client";
 
 export const metadata = {
   title: "Indexing Configurations | Blockchain Indexer",
@@ -123,9 +123,9 @@ export default async function IndexingPage() {
             // Calculate progress - dummy value for now
             const progress = 
               !latestStatus ? 0 : 
-              latestStatus.status === SyncStatusType.COMPLETED ? 100 :
-              latestStatus.status === SyncStatusType.RUNNING ? 75 : 
-              latestStatus.status === SyncStatusType.FAILED ? 0 : 25;
+              latestStatus.status === "COMPLETED" ? 100 :
+              latestStatus.status === "RUNNING" ? 75 : 
+              latestStatus.status === "FAILED" ? 0 : 25;
             
             return (
               <div key={config.id} className="bg-gray-800 border border-gray-700 rounded-lg shadow-md overflow-hidden">
@@ -139,9 +139,9 @@ export default async function IndexingPage() {
                     </div>
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       !latestStatus ? "bg-gray-600 text-gray-100" :
-                      latestStatus.status === SyncStatusType.COMPLETED ? "bg-green-900 text-green-100" :
-                      latestStatus.status === SyncStatusType.RUNNING ? "bg-blue-900 text-blue-100" :
-                      latestStatus.status === SyncStatusType.FAILED ? "bg-red-900 text-red-100" : "bg-gray-600 text-gray-100"
+                      latestStatus.status === "COMPLETED" ? "bg-green-900 text-green-100" :
+                      latestStatus.status === "RUNNING" ? "bg-blue-900 text-blue-100" :
+                      latestStatus.status === "FAILED" ? "bg-red-900 text-red-100" : "bg-gray-600 text-gray-100"
                     }`}>
                       {!latestStatus ? "Not Started" : latestStatus.status}
                     </span>
