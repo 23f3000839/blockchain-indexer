@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
@@ -18,7 +18,8 @@
     "prisma:studio": "prisma studio",
     "logs": "pm2 logs blockchain-indexer",
     "logs:db": "pm2 logs blockchain-indexer-db",
-    "logs:webhook": "pm2 logs blockchain-indexer-webhook"
+    "logs:webhook": "pm2 logs blockchain-indexer-webhook",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@clerk/nextjs": "^4.29.1",
